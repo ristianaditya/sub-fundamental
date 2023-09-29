@@ -1,54 +1,58 @@
 import "./style.css"
 
-
-const url = 'https://api.themoviedb.org/3/discover/movie/';
-const options = {
-  method: 'GET',
-  headers: {
-    accept: 'application/json',
-    Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlY2Q5NDA4ODIyZmUyMGZkYzU1OGRhOTI0ODAxNGVmMyIsInN1YiI6IjY1MTEzMjE3YTkxMTdmMDExYjIxMjdhNSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.tNsnkcXrrxlQGEgiYyqpcr2atS82O-mXocxx3bF3dPs'
-  }
-};
-
-fetch(url, options)
-  .then(res => res.json())
-  .then(json => console.log(json))
-  .catch(err => console.error('error:' + err));
+const fetch = require('node-fetch');
 
 class MovieInfo extends HTMLElement {
     constructor() {
-      super();
-  
-      const shadow = this.attachShadow({ mode: 'open' });
-  
-      // Create a container for our movie info
-      const container = document.createElement('div');
-  
-      // Extract attributes from the element
-      const title = this.getAttribute('title');
-      const date = this.getAttribute('date');
-      const rate = this.getAttribute('rate');
-      const image = this.getAttribute('image');
-  
-      // Construct the inner HTML
-      container.innerHTML = `
-      <div class="movie-card">
-          <img src="${image}" alt="${title} Poster">
-          <div class="Title">${title}</div>
-          <div class="date">${date}</div>
-          <div class="rate">${rate}</div>
-      </div>
-      `;
+        super();
 
-      // Append the container to the shadow DOM
-      shadow.appendChild(container);
+        // Create a shadow DOM
+        const shadow = this.attachShadow({ mode: 'open' });
+
+        // Create a container for our movie info
+        const container = document.createElement('div');
+        container.setAttribute('class', 'movie-list');
+
+        // Append the container to the shadow DOM
+        shadow.appendChild(container);
+
+        // Fetch and display movie data
+        this.fetchAndDisplayMovies(container);
     }
 
+    // Define a method to fetch and display movies
+    fetchAndDisplayMovies(container) {
+        // Make a request to the TMDb API to fetch top-rated movies
+        const url = 'https://api.themoviedb.org/3/movie/top_rated?language=en-US&page=1';
+        const options = {
+            method: 'GET',
+            headers: {
+                accept: 'application/json',
+                Authorization: 'Bearer YOUR_API_TOKEN' // Replace with your actual API token
+            }
+        };
 
-  }
-  
-  // Define the custom element
-  customElements.define('movie-info', MovieInfo);
+        fetch(url, options)
+            .then(response => response.json())
+            .then(data => {
+                // Loop through the movie results and create a card for each movie
+                data.results.forEach(movie => {
+                    const movieCard = document.createElement('div');
+                    movieCard.setAttribute('class', 'movie-card');
+                    movieCard.innerHTML = `
+                        <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title} Poster">
+                        <div class="Title">${movie.title}</div>
+                        <div class="date">${movie.release_date}</div>
+                        <div class="rate">${movie.vote_average}</div>
+                    `;
+                    container.appendChild(movieCard);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching movie data:', error);
+            });
+    }
+}
 
-const contoh = document.createElement("movie-info")
-document.body.appendChild(contoh);
+// Define the custom element
+customElements.define('movie-info', MovieInfo);
